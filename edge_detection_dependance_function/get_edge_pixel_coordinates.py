@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def get_edge_pixel_coordinates(edge_image):
     """
     Compute the coordinates of the edge pixels in a binary image.
@@ -24,5 +25,5 @@ def get_edge_pixel_coordinates(edge_image):
     """
     rows, cols = np.nonzero(edge_image)
     x = cols
-    y = -rows
+    y = rows
     return x, y

@@ -30,6 +30,7 @@ def extract_roi(image, outer_center, outer_radius, inner_center, inner_radius):
     # Build the mask: pixels between inner and outer circle
     mask = (dist_outer <= outer_radius) & (dist_inner >= inner_radius)
 
+
     # Create masked image
     masked_image = np.zeros_like(image)
     masked_image[mask] = image[mask]
@@ -40,8 +41,6 @@ def extract_roi(image, outer_center, outer_radius, inner_center, inner_radius):
     y_min = max(int(outer_center[1] - outer_radius), 0)
     y_max = min(int(outer_center[1] + outer_radius), h)
 
-    # Crop to bounding rectangle
-    cropped_image = masked_image[y_min:y_max, x_min:x_max]
 
-    return masked_image, cropped_image, (x_min,y_min)
 
+    return masked_image,(x_min,y_min)

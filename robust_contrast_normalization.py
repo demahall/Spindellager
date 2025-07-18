@@ -27,6 +27,7 @@ def robust_contrast_normalization(image, cutoff_percentage):
     hist, bin_edges = np.histogram(image_float, bins=256, range=(0, 1))
     cdf = np.cumsum(hist) / np.prod(image_float.shape)
 
+    #Determine max and min Values of cdf
     cdf_min = np.min(cdf)
     cdf_max = np.max(cdf)
 
@@ -37,6 +38,7 @@ def robust_contrast_normalization(image, cutoff_percentage):
     # Compute stretch limits in CDF domain
     lower_cdf_val = cdf_min + percent_cutoff_lower
     upper_cdf_val = cdf_max - percent_cutoff_upper
+
 
     # Map CDF thresholds back to intensity values
     # (we find where the CDF crosses the thresholds)

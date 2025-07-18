@@ -5,7 +5,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from extractROI import extract_roi
 from robust_contrast_normalization import robust_contrast_normalization
-from edge_detection import detect_edges
+import edge_detection as ed
 from circlefitGaussNewtonGeometric import fit_circle_gauss_newton
 
 class GUI:
@@ -26,7 +26,7 @@ class GUI:
         self.pan_start = None
 
         #ROI image
-        self.cropped_roi = None
+        self.image_roi = None
         self.roi_offset = None
 
         #ROI robust contrast
@@ -201,24 +201,33 @@ class GUI:
         self.instructions.config(text="Circles processed. Press Reset to start over.")
 
         # Extract ROI
-        _, cropped, offset = extract_roi(self.image,self.outer_points[0],
-                                 outer_radius,self.inner_points[0], inner_radius)
+        image_roi,offset = extract_roi(self.image,self.outer_points[0],outer_radius,
+                                         self.inner_points[0],inner_radius)
 
-        self.cropped_roi = cropped
+        self.image_roi = image_roi
         self.roi_offset = offset
 
         # Compute robust normalized contrast
-        normalized,stretchlim = robust_contrast_normalization(self.cropped_roi,(2 , 2))
+        normalized,stretchlim = robust_contrast_normalization(self.image_roi,(2 , 2))
         self.normalized_roi = normalized
 
         # Edge detection
-        edges = detect_edges(self.normalized_roi, threshold=(0.1, 0.3), sigma=1.0, min_area=30)
+
+
+        params = ed.edge_detection_parser(image=self.normalized_roi,
+                                          boundaryROIImage = None,
+                                          detector='canny',
+                                          thresh=1,
+                                          sigma=3,
+                                          minPixelArea=None,
+                                          thickenValue=None,
+                                          outlierDetection= 'spline')
+
+        edges = ed.edge_detection(params)
         self.edges_image = edges
 
         # Circle fitting
         self.fitted_circle = fit_circle_gauss_newton(self.edges_image)
-
-        print("ROI extracted, normalized, edges detected, and circle fitted:")
 
         #Show circle
         center_x = {"inner_center_x": inner_center_x,
@@ -230,17 +239,19 @@ class GUI:
         radius = {"inner_radius": inner_radius,
                   "outer_radius": outer_radius,
                   "fitted_center_radius": self.fitted_circle["radius"]}
-        # Draw both circles on the image
+
+
+        #Draw both circles on the image
         self.draw_circles(center_x, center_y, radius)
 
         self.roi_button.config(state=tk.NORMAL)
         self.norm_button.config(state=tk.NORMAL)
         self.edges_button.config(state=tk.NORMAL)
 
-
+        print("ROI extracted, normalized, edges detected, and circle fitted:")
 
     def show_roi_window(self):
-        if self.cropped_roi is None:
+        if self.image_roi is None:
             print("No ROI computed yet.")
             return
 
@@ -250,7 +261,7 @@ class GUI:
 
         # Create matplotlib figure for the ROI
         fig, ax = plt.subplots(figsize=(6, 6))
-        ax.imshow(self.cropped_roi, cmap='gray')
+        ax.imshow(self.image_roi, cmap='gray')
         ax.axis('off')
         ax.set_title("Cropped ROI")
 
@@ -329,7 +340,7 @@ class GUI:
         self.instructions.config(text="Click to select points for outer circle")
 
         # Reset all results
-        self.cropped_roi = None
+        self.image_roi = None
         self.normalized_roi = None
         self.roi_button.config(state=tk.DISABLED)
         self.norm_button.config(state=tk.DISABLED)
@@ -337,9 +348,9 @@ class GUI:
 
     def draw_circles(self, center_x,center_y,radius):
 
-        x_offset,y_offset = self.roi_offset
-        fitted_center_x = center_x["fitted_center_x"]+x_offset
-        fitted_center_y = center_y["fitted_center_y"]+y_offset
+        #x_offset,y_offset = self.roi_offset
+        fitted_center_x = center_x["fitted_center_x"]
+        fitted_center_y = center_y["fitted_center_y"]
 
 
         # Draw the outer circle (blue)
